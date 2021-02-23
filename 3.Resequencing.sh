@@ -13,10 +13,10 @@ mkdir -p "$3"/sorted "$3"/disc "$3"/split && for i in "$1"/*_R1.clean.fq.gz; do 
 #### 2. Variant calling via multiple tools (pick your tool of interest). For join calling prefer GATK or Deepvariant. For single samples you can use freebayes
 	#a) deepvariant sample command: change input and output path; this will run singly for mutlple samples. cant get looped. gvcfs have to be joined
 BIN_VERSION="0.10.0"
-docker run -v "/Analysis/dr.joykumar/clean2/JKRB1/remap/sorted":"/input" -v "/Analysis/dr.joykumar/clean2/JKRB1/remap/sorted":"/output" google/deepvariant:"${BIN_VERSION}" /opt/deepvariant/bin/run_deepvariant --model_type=WGS --ref=/input/
-Triticum_aestivum.IWGSC.dna.toplevel.fa.gz --reads=/input/JKRB1.sorted.bam --output_vcf=/output/JKRB1.vcf.gz  --output_gvcf=/output/JKRB1.g.vcf.gz --tmpdir=/input/tmp --num_shards=96 2>log
+docker run -v "$PWD":"/input" -v "$PWD/sorted":"/output" google/deepvariant:"${BIN_VERSION}" /opt/deepvariant/bin/run_deepvariant --model_type=WGS --ref=/input/
+reference.fa.gz --reads=/input/sample1.sorted.bam --output_vcf=/output/sample1.vcf.gz  --output_gvcf=/output/sample1.g.vcf.gz --tmpdir=/input/tmp --num_shards=96 2>log
 		#combine all the gvcf for joint calling
-docker run -v "/Analysis/dr.joykumar/clean2/JKRB1/remap/sorted":"/data" quay.io/mlin/glnexus:v1.2.6  /usr/local/bin/glnexus_cli --config DeepVariantWGS *.g.vcf.gz |  | bcftools view - bgzip -c >  /Analysis/dr.joykumar/clean2/JKRB1/remap/sorted/deepvariant.cohort.vcf.gz
+docker run -v "$PWD/sorted":"/data" quay.io/mlin/glnexus:v1.2.6  /usr/local/bin/glnexus_cli --config DeepVariantWGS *.g.vcf.gz |  | bcftools view - bgzip -c > deepvariant.cohort.vcf.gz
 
 
 	#b) freebayes (need to filter with various approaches):
@@ -58,4 +58,4 @@ docker run -v $PWD:/home/dnanexus/in -v $PWD/outs:/home/dnanexus/out dnanexus/pa
 #with snpeff
 for i in *.vcf;do echo "snpEff ann -csvStats $(basename "$i" .vcf).csv.stats genome "$i" > $(basename "$i" .vcf).Annotated.vcf"; done | parallel -j2 &
 #with VEP
-bcftools view pass.snp.vcf.gz | vep --fork 4 --everything --species gallus_gallus --format vcf --cache --dir_cache /data/analysis/shared_files/Harish/apps/miniconda3/envs/variants/vep/  --fasta /data/ref_genomes/chicken/chicken.fasta -i STDIN --vcf --compress_output bgzip
+bcftools view pass.snp.vcf.gz | vep --fork 4 --everything --species "ensembl_format_name" --format vcf --cache --dir_cache vep_cache_path --fasta reference.fasta -i STDIN --vcf --compress_output bgzip
