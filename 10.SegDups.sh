@@ -9,4 +9,4 @@ grep -v "COLLAPSED" genome.gff3 | grep -v "^#" | awk -F'\t' '{if($5-$4>=1000 && 
 grep "COLLAPSED" genome.gff3 | grep -v "^#" | awk -F'\t' '{if($5-$4>=1000 && $6>=90)print $0}' > 1000_90.collapsed.gff3
 
 #3. For plotting: needs to explore. check asgart-plot
-asgart-plot 1000_score.json chord --min-identity 90 --min-length 1000 -C by-type
+asgart-plot 1000_score.json chord --min-identity 90 -C by-type --min-length 1000
