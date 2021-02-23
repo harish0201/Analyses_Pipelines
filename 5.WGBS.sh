@@ -3,10 +3,10 @@
 ##### change parameters as needed. WGBS is really funky.
 
 #### 0. Index the genome with bismark
-bismark_genome_preparation --parallel 4 --path_to_aligner /apps_940/hisat2*/ --hisat2 --genomic_composition <path_to_genome_folder>/genome.fasta
+bismark_genome_preparation --parallel 4 --path_to_aligner hisat2 --hisat2 --genomic_composition <path_to_genome_folder>/genome.fasta
 
 #### 1. Align with Bismark (will be present on /apps_940/WGBS) (will use 20*4=80 threads)
-bismark --hisat2 --known-splicesite-infile splice.hisat2 -p 20 --nucleotide_coverage -B sample1 --bam --gzip --parallel 4 --path_to_hisat2 /apps_940/hisat2*/ <path_to_genome_folder> -1 sample1_r1.fq.gz -2 sample2_r2.fq.gz
+bismark --hisat2 --known-splicesite-infile splice.hisat2 -p 20 --nucleotide_coverage -B sample1 --bam --gzip --parallel 4 --path_to_hisat2 hisat2 <path_to_genome_folder> -1 sample1_r1.fq.gz -2 sample2_r2.fq.gz
 
 #### 2. Deduplicate bismark alignments
 deduplicate_bismark --bam -o sample1.dedupe.bam sample1.bam #(replace with whatever bismark bam is)
