@@ -11,7 +11,7 @@ cat *_2.clean.fastq.gz > R2.fq.gz
 #### 3 normalization
 /apps/bbmap/bbnorm.sh target=40 fixspikes=t k=25 threads=40 rdk=t in=R1.fq.gz in2=R2.fq.gz out=norm.R1.fq.gz out2=norm.R2.fq.gz
 
-#### 4 assemblies (for advanced pick all the assembler, for standard pick trinity)
+#### 4 assemblies
 conda activate assembler
 rnaspades.py -1 norm.R1.fq.gz -2 norm.R2.fq.gz -o spades -t 40
 rnabloom -ntcard -t 40 -l norm.R1.fq.gz -r norm.R2.fq.gz -k 25-65:20
@@ -35,7 +35,7 @@ awk '{print $2"\t"$1}' mag.flat.clust > gene.map
 #### 7 quantify all the samples using the command above in 6
 salmon quant -i okay -l A -1 sample_1.clean.fastq.gz -2 sample_1.clean.fastq.gz -o quants/sample_1 --seqBias --gcBias --dumpEq --gene gene.map
 salmon quantmerge --column=numReads --gene $(find -type d -maxdepth 1) --output counts.matrix
-#will have to round of the values to the closest integer
+#will have to round of the values to the closest integer, can use datamash for that
 
 #### 8 run differential expression after preparing the replicate matrix and contrast matrix
 #### filter for log2foldchange > 1 and FDR/p-adj<0.05
