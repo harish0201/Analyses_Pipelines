@@ -16,7 +16,7 @@ Trinity --seqType fq --left norm.R1.fq.gz --right norm.R2.fq.gz --max_memory 160
 cat tama.cds.fasta cds.fasta Trinity.fasta > transcripts.fasta
 #create template file as per pasa documentation, it will either be called template.txt or alignAssembly.conf. change only the Database path. Put absolute path. eg template below for GIB. we had no isoseq here, but only trinity transcripts
 ``
-DATABASE=/data/analysis/dr.jhala/analyses/falcon/7.final/annotation/rnaseq/pasa/gib.sqlite3
+DATABASE=annot.sqlite3
 ``
 Launch_PASA_pipeline.pl -c alignAssembly.conf -C -R --ALIGNER gmap -g genome.fa -t transcripts.fasta
 #required files will be : genome.sqlite3.pasa_assemblies*
@@ -33,7 +33,7 @@ RepeatMasker -pa 96 -lib repeat_classes.fasta -s -xsmall -gff -excln genome.fast
 
 #5. Augustus and Genemark training
 #with busco train augustus (much faster and easier results)
-python /apps/busco/scripts/run_BUSCO.py -i genome.fasta.masked -o scaffolds_long -l /apps/busco/lineage/embryophyta_odb9/ -m genome -c 96 --long -z #(using BUSCO, copy retraining folder to Augustus config directory:augustus/config/species)
+python /apps/busco/scripts/run_BUSCO.py -i genome.fasta.masked -o scaffolds_long -l /apps/busco/lineage -m genome -c 96 --long -z #(using BUSCO, copy retraining folder to Augustus config directory:augustus/config/species)
 augustus --gff3=on --species=scaffolds_long genome.fasta.masked > scaffolds.augustus.gff3 
 
 #with proteins from orthodb train genemark (takes maximum 64 threads)
