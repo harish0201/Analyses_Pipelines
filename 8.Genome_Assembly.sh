@@ -42,14 +42,14 @@ mv haps.fa alts.fasta
 ls *gz | sort -uVk1 > data.fofn
 #open the file in terminal and mod the file to append the q1 and q2. Ensure the reads are paired (example below)
 ``
-q1=/data/analysis/dr.ajay.parida/TB/data/PT10X19B_PT10X19A-AK1843_S1_L004_R1_001.fastq.gz
-q2=/data/analysis/dr.ajay.parida/TB/data/PT10X19B_PT10X19A-AK1843_S1_L004_R2_001.fastq.gz
-q1=/data/analysis/dr.ajay.parida/TB/data/PT10X19B_PT10X19A-AK1844_S2_L004_R1_001.fastq.gz
-q2=/data/analysis/dr.ajay.parida/TB/data/PT10X19B_PT10X19A-AK1844_S2_L004_R2_001.fastq.gz
-q1=/data/analysis/dr.ajay.parida/TB/data/PT10X19B_PT10X19A-AK1845_S3_L004_R1_001.fastq.gz
-q2=/data/analysis/dr.ajay.parida/TB/data/PT10X19B_PT10X19A-AK1845_S3_L004_R2_001.fastq.gz
-q1=/data/analysis/dr.ajay.parida/TB/data/PT10X19B_PT10X19A-AK1861_S4_L004_R1_001.fastq.gz
-q2=/data/analysis/dr.ajay.parida/TB/data/PT10X19B_PT10X19A-AK1861_S4_L004_R2_001.fastq.gz
+q1=PT10X19B_PT10X19A-AK1843_S1_L004_R1_001.fastq.gz
+q2=PT10X19B_PT10X19A-AK1843_S1_L004_R2_001.fastq.gz
+q1=PT10X19B_PT10X19A-AK1844_S2_L004_R1_001.fastq.gz
+q2=PT10X19B_PT10X19A-AK1844_S2_L004_R2_001.fastq.gz
+q1=PT10X19B_PT10X19A-AK1845_S3_L004_R1_001.fastq.gz
+q2=PT10X19B_PT10X19A-AK1845_S3_L004_R2_001.fastq.gz
+q1=PT10X19B_PT10X19A-AK1861_S4_L004_R1_001.fastq.gz
+q2=PT10X19B_PT10X19A-AK1861_S4_L004_R2_001.fastq.gz
 ``
 scaff_reads -nodes 48 data.fofn genome-BC_1.fastq.gz genome-BC_2.fastq.gz #(debarcodes the data, using 48 threads)
 scaff10X -nodes 48 -align bwa -score 20 -matrix 2000 -read-s1 10 -read-s2 10 -longread 1 -gap 100 -edge 50000 -link-s1 8 -link-s2 8 -block 50000 primary.fasta genome-BC_1.fastq.gz genome-BC_2.fastq.gz scaff10x.fasta
