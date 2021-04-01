@@ -9,7 +9,7 @@
 orthofinder -t 192 -a 192 -M msa -S diamond -A mafft -T fasttree -f $DIR ##($DIR=folder with protein sequences)
 
 #### 3. Convert SpeciesTree_rooted.txt to ultrametric. Find time of outgroup or root node from TimeTree.org: age-> of root node
-python2.7 /apps_940/OrthoFinder/tools/make_ultrametric.py -r age SpeciesTree_rooted.txt
+python2.7 OrthoFinder/tools/make_ultrametric.py -r age SpeciesTree_rooted.txt
 
 #### 4. Tips:
 	## 1. Check the cafe tutorial pdf
