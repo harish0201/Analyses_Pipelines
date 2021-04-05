@@ -1,22 +1,28 @@
+set.seed("1234")
 library(DESeq2)
 library("BiocParallel")
-register(MulticoreParam(30))
-countdata = read.table("counts.matrix", header = T, row.names = NULL, check.names = F)
+args = commandArgs(trailingOnly=TRUE)
+register(MulticoreParam(4))
+countdata = read.table(args[1], header = T, row.names = NULL, check.names = F)
 colnames(countdata)[1] = "Geneid";
 countdata = aggregate(.~Geneid, countdata, max)
 row.names(countdata) = countdata[,1]; countdata = countdata[,-1]
-#name = gsub("featureCounts.","", colnames(countdata))
-#colnames(countdata) = name
-sampleInfo <- read.table("SampleInfo_Replicates",header = T,sep = "\t",row.names = 1)
+sampleInfo <- read.table(args[2], header = T,sep = "\t", row.names = 1)
 countdata = countdata[,as.character(as.matrix(row.names(sampleInfo)))]
-countdata  =  countdata[rowSums(countdata) >=  1,]
+countdata  =  countdata[rowSums(countdata) >=  5,]
 countdata = data.matrix(countdata)
 ddsMat <- DESeqDataSetFromMatrix(countData = round(countdata), colData = sampleInfo, design = ~Replicate)
 rld <- rlog(ddsMat, blind = FALSE)
 system("mkdir -p data")
 write.table(assay(rld), file = "data/readCountRlogNorm.xls", sep = "\t",col.names = NA, quote=FALSE)
 diffExp <- DESeq(ddsMat)
-rm(ddsMat); gc()
+
+#####Extra information#####
+## counts per sample
+sink("data/size_factors.txt")
+total_counts = apply(assay(diffExp), 2, sum)
+sizeFactors(diffExp)
+sink()
 
 ###############Samples-Relationships##########
 library(RColorBrewer)
@@ -25,7 +31,7 @@ library(circlize)
 library(ComplexHeatmap)
 library(Hmisc)
 #distance matrix
-system("mkdir -p figures/absPairVenn")
+system("mkdir -p figures")
 col4 <- colorRampPalette(c("darkblue","darkgreen", "yellow", "darkviolet", "darkmagenta"))
 sampleDists <- as.matrix(dist( t(assay(rld)) ))
 write.table(sampleDists,file = "data/rlog_Normalized_Values.txt",sep = "\t", quote=FALSE)
@@ -41,11 +47,21 @@ draw(ht,heatmap_legend_side  =  "left")
 dev.off()
 
 #PCA
-png(file = "figures/PCA.png", height = 10, width = 10, units="in", res=600)
-plotPCA(rld, intgroup="Replicate")
-dev.off()
+data <- plotPCA(rld, intgroup="Replicate", returnData=TRUE)
+percentVar = round(100 * attr(data, "percentVar"))
+ggplot(data, aes(PC1, PC2, color=Replicate, shape=name)) +
+  geom_hline(aes(yintercept=0), colour="grey") +
+  geom_vline(aes(xintercept=0), colour="grey") +
+  geom_point(size=5)+
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  theme_bw(base_size = 14) +
+  ggtitle("PCA\n") + labs(color="Groups", shape="Sample Names")+
+  scale_shape_manual(values=c(0:18,33:17))
+ggsave(file=sprintf("figures/PCA_var1_var2.pdf"), width=7, height=6)
 
-################ COMPS##########
+
+################ Contrasts to be performed ##########
 normReadCount = counts(diffExp, normalized = TRUE)
 write.table(normReadCount, file = "data/readCountNorm.xls", sep = "\t",col.names = NA, quote=FALSE)
 mCountdata =  data.frame(factor(sampleInfo$Replicate),t(normReadCount), check.names  =  FALSE)
@@ -57,40 +73,48 @@ ind = match(colnames(mCountdata),unique(sampleInfo$Replicate))
 mCountdata = mCountdata[,ind]
 write.table(mCountdata, file = "data/readCountMatrixMergedRepli.xls", sep = "\t",col.names = NA, quote=FALSE)
 mCountData=mCountdata
-comp = read.table("contrast", header = T, row.names = NULL)
+comp = read.table(args[3], header = T, row.names = NULL)
 comp = data.frame("Replicate",comp[1:(length(comp)/2)],comp[((length(comp)/2)+1):length(comp)])
-listDiffMat = apply(comp, 1, function(x){  results(diffExp, ,contrast = x)})
+listDiffMat_nofdr = apply(comp, 1, function(x){  results(diffExp, contrast = x)})
 #colNames = apply(comp, 1, function(x){ paste(x[-1], collapse  =  " Vs ") })
 
 #export out tables:
-sapply(1:length(listDiffMat),function(x)write.table(listDiffMat[[x]],file=sprintf('data/Comparison%d.txt', x), quote=FALSE, sep="\t"))
+sapply(1:length(listDiffMat_nofdr),function(x)write.table(listDiffMat_nofdr[[x]],file=sprintf('data/Comparison%d.xls', x), quote=FALSE, sep="\t"))
 
-###############VENNS############################
-library(VennDiagram)
-cols = c("red","green","blue","orange","magenta","turquoise1","pink","purple","olivedrab1")
-system("mkdir -p figures/absPairVenn")
-#pairwise comparision on absolute value on normalized counts
-vennComb  =  combn(colnames(mCountData), 2, simplify  =  FALSE)
-lapply(vennComb, function(x){
-GenesList = lapply(x, function(y) { row.names(mCountData)[mCountData[,y] > 1];    })
-names(GenesList) = x
-name = paste(x,  collapse = "_join_");
-name = paste(name, ".pdf", sep = "")
-name = paste("figures/absPairVenn/", name , sep = "")
-pdf(file = name)
-v0 <-venn.diagram(GenesList, filename = NULL, col  =  cols[1:length(GenesList)], fill = cols[1:length(GenesList)], euler.d = FALSE, scaled = F, cat.pos = c(0,0))
-grid.newpage()
-grid.draw(v0)
-dev.off()
-})
+####### Expression density plot #########
+toplot = data.frame(counts(diffExp, normalized=T))
+toplot = stack(toplot, select=colnames(toplot))
+p = ggplot( toplot, aes(values, colour=ind, alpha=0.5))
+p + geom_line(aes(color=ind), stat="density", alpha=0.5) +
+  scale_x_log10(name="\nnormalized counts", breaks=c(0.1,1,10,100,1000,10000,100000), limits=c(0.1,100000) ) +
+  scale_y_continuous(name="density\n") +
+  scale_colour_discrete(name="Samples") +
+  geom_vline(xintercept=10, colour="grey", linetype = "dashed") +
+  theme_minimal() +
+  ggtitle("Density plot\n") +
+  theme()
+ggsave(file=sprintf("figures/Density_plot.sample_read_counts.pdf"), width=7, height=6)
+rm(ddsMat); gc()
 
 #####Comparative heatmap#####
 library( "genefilter" )
+topVarGenes <- head( order( rowVars( assay(rld) ), decreasing=TRUE ), 100)
+pdf("figures/100_Heatmap_genes.pdf")
+dev.off()
 topVarGenes <- head( order( rowVars( assay(rld) ), decreasing=TRUE ), 50)
 pdf("figures/50_Heatmap_genes.pdf")
-heatmap.2(assay(rld)[ topVarGenes,], scale="row", trace="none", dendrogram="row", col = colorRampPalette(rev(brewer.pal(9, "RdBu")) )(255), ColSideColors=c( Control="gray", DPN="darkgreen", OHT="orange" )[colData(rld)$Replicate], cexRow=0.3, cexCol=0.75, key=TRUE, margins=c(15,15),srtCol=45)
+heatmap.2(assay(rld)[ topVarGenes,], scale="row", trace="none", dendrogram="row", col = colorRampPalette(rev(brewer.pal(9, "RdBu")) )(255), ColSideColors=c( Control="gray", DPN="darkgreen", OH
+T="orange" )[colData(rld)$Replicate], cexRow=0.3, cexCol=0.75, key=TRUE, margins=c(15,15),srtCol=45)
 dev.off()
 topVarGenes <- head( order( rowVars( assay(rld) ), decreasing=TRUE ), 25)
 pdf("figures/25_Heatmap_genes.pdf")
-heatmap.2(assay(rld)[ topVarGenes,], scale="row", trace="none", dendrogram="row", col = colorRampPalette(rev(brewer.pal(9, "RdBu")) )(255), ColSideColors=c( Control="gray", DPN="darkgreen", OHT="orange" )[colData(rld)$Replicate], cexRow=0.4, cexCol=0.75, key=TRUE, margins=c(15,15),srtCol=45)
+heatmap.2(assay(rld)[ topVarGenes,], scale="row", trace="none", dendrogram="row", col = colorRampPalette(rev(brewer.pal(9, "RdBu")) )(255), ColSideColors=c( Control="gray", DPN="darkgreen", OH
+T="orange" )[colData(rld)$Replicate], cexRow=0.4, cexCol=0.75, key=TRUE, margins=c(15,15),srtCol=45)
 dev.off()
+
+
+####Session information#######
+sink("DESeq2.session_info.txt")
+sessionInfo()
+sink()
+system("rm Rplots.pdf")
