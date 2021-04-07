@@ -1,4 +1,4 @@
-GeSeqJob-20210401-115328_GLOBAL_multi-GFF3set.seed("1234")
+set.seed("1234")
 library(DESeq2)
 library(dplyr)
 #library(vidger)
@@ -184,6 +184,7 @@ dev.off()
 
 ####Session information#######
 sink("data/DESeq2.session_info.txt")
+print("seed is 1234")
 sessionInfo()
 sink()
 
