@@ -76,7 +76,7 @@ python2.7 genomeannotation-GAG-997e384/gag.py -f genome.fasta -g fixed.EVM.gff3
 
 #8. Functional annotation
 #submit proteins from gag_output to eggNOG mapper and pannzer online
-#interpro submission script is with suresh sir
 
-#9. Tertiary analyses shared with suresh sir
+
+#9. Tertiary analyses present in CAFE etc
 
