@@ -37,6 +37,8 @@ Desc    Orthogroup      Bombyx  Chilo   Drosophila      Helicoverpa     Leucinod
 (null)  OG0000068       5       4       0       4       33      0       1       24      21      0       5
 (null)  OG0000069       12      9       7       8       8       11      10      8       8
 ``
+#remove the total column from above, without needed to figure out column numbers.
+awk -F'\t' '{$NF=""; print $0}' tmp.tsv | rev | sed 's/^\s*//g' | rev | tr ' ' '\t' > mod.tsv
 
 #run size filter finally
 #filter the Orthogroups.GeneCount.tsv file to remove OG that have more than 100 proteins in a particular species:
