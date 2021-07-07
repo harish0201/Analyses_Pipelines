@@ -32,7 +32,7 @@ name=$(echo $REFERENCE | sed 's/.fa.*\|.fna.*//g')
 for i in *.bam; do echo "gatk4 --java-options "-Xmx40g" HaplotypeCaller -R $REFERENCE -I "$i" -O $(basename "$i" .bam).g.vcf.gz -ERC GVCF -G StandardAnnotation -G AS_StandardAnnotation"; done | parallel -j2
 ls *g.vcf.gz > gvcf.list
 awk '{print $1"\t0\t"$2-1}' $REFERENCE.fai > reference.bed
-picard BedToIntervalList I=reference.bed SD=$name.dict O=interval.list
+picard BedToIntervalList I=reference.bed SD=$name.dict O=$name.interval_list #(after much hair-pulling and trouble-shtooting: https://github.com/broadinstitute/gatk/issues/7095)
 gatk4 GenomicsDBImport -V gvcf.list --genomicsdb-workspace-path my_database -L interval.list
 for i in SNP INDEL; do echo "gatk4 SelectVariants -R $REFERENCE -V genotyped.vcf.gz --select-type-to-include "$i" -O "$i".vcf.gz"; done | parallel -j2
 gatk4 VariantFiltration -R $REFERENCE -V SNP.vcf.gz --filter-expression 'QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0 || SOR > 4.0' --filter-name "basic_snp_filter" -O filtered_snps.vcf.gz
